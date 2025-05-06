@@ -1,0 +1,40 @@
+sniffer.py
+
+from scapy.all import *
+def handler(packet):
+ print(packet.summary())
+sniff(iface="wlp1s0", prn=handler, store=0)
+
+# Run with following command
+# sudo python3 sniffer.py 
+# you can change last network id -> wlp1s0
+
+
+Sniffer1.py
+
+import argparse
+from scapy.all import *
+
+class Sniffer:
+ def __init__(self, args):
+  self.args = args
+ def __call__(self, packet):
+  if self.args.verbose:
+   packet.show()
+  else:
+   print(packet.summary())
+
+ def run_forever(self):
+  sniff(iface=self.args.interface, prn=self,S
+parser = argparse.ArgumentParser()
+parser.add_argument('-v', '--
+talkative')
+parser.add_argument('-i', '--
+name')
+args = parser.parse_args()
+sniffer = Sniffer(args)
+sniffer.run_forever()
+
+# Run with following command
+# sudo python3 sniffer1.py -v -i enp3s0
+# You can change last network id ->enp3s0

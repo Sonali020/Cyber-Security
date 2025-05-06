@@ -1,0 +1,189 @@
+Spam Mail Detection
+
+import nltk
+from nltk.corpus import stopwords
+import string
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import classification_report, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load the dataset
+messages = pd.read_csv('D:/spam.csv', encoding='latin-1')
+
+# Drop unused columns
+messages.drop(['Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4'], axis=1, inplace=True)
+
+# Rename columns for clarity
+messages = messages.rename(columns={'v1': 'class', 'v2': 'text'})
+
+# Display basic stats
+print(messages.head())
+print(messages.groupby('class').describe())
+
+# Add a column for message length
+messages['length'] = messages['text'].apply(len)
+
+# Plot histogram of message lengths
+messages.hist(column='length', by='class', bins=50, figsize=(15, 6))
+plt.show()
+
+# Preprocessing function
+def process_text(text):
+    '''
+    Process the input text:
+    1. Remove punctuation
+    2. Remove stopwords
+    3. Return list of clean words
+    '''
+    # Remove punctuation
+    nopunc = [char for char in text if char not in string.punctuation]
+    nopunc = ''.join(nopunc)
+
+    # Remove stopwords
+    clean_words = [word for word in nopunc.split() if word.lower() not in stopwords.words('english')]
+
+    return clean_words
+
+# Apply preprocessing
+print(messages['text'].apply(process_text).head())
+
+# Split the dataset into training and testing sets
+msg_train, msg_test, class_train, class_test = train_test_split(
+    messages['text'], messages['class'], test_size=0.2)
+
+# Create a pipeline for vectorization and classification
+pipeline = Pipeline([
+    ('bow', CountVectorizer(analyzer=process_text)),     # Convert text to bag-of-words
+    ('tfidf', TfidfTransformer()),                        # Convert bag-of-words to TF-IDF
+    ('classifier', MultinomialNB())                       # Naive Bayes classifier
+])
+
+# Train the model
+pipeline.fit(msg_train, class_train)
+
+# Make predictions
+predictions = pipeline.predict(msg_test)
+
+# Evaluate the model
+print(classification_report(class_test, predictions))
+
+# Plot the confusion matrix
+sns.heatmap(confusion_matrix(class_test, predictions), annot=True, fmt='d', cmap='Blues')
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+
+
+2
+
+# Dataset: SMSSpamCollection
+# Location: https://mitu.co.in/dataset # Download the dataset from here
+
+import pandas as pd
+import seaborn as sns
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score
+
+# Load the dataset
+df = pd.read_csv('D:/SMSSpamCollection', sep='\t', names=['label', 'text'])  # Set the correct dataset location
+
+# Display the dataframe and its shape
+print(df.head())
+print(df.shape)
+
+# Input and output variables
+x = df['text']  # Feature (text messages)
+y = df['label']  # Label (spam/ham)
+
+# Plot the label distribution
+sns.countplot(x=y)
+print(y.value_counts())
+
+# Text Preprocessing
+# 1. Remove punctuation symbols
+# 2. Remove stopwords
+# 3. Apply stemming
+
+# Sample sentence to demonstrate the cleaning process
+sent = 'Hello friends! How are you? Welcome to Nashik.'
+
+# Tokenization
+tokens = word_tokenize(sent)
+
+# Remove punctuation and digits
+clean1 = [x.lower() for x in tokens if x.isalpha() or x.isdigit()]
+
+# Remove stopwords
+swords = stopwords.words('english')
+clean2 = [x for x in clean1 if x not in swords]
+
+# Stemming
+ps = PorterStemmer()
+clean3 = [ps.stem(x) for x in clean2]
+
+# Function to clean the text
+def clean_text(sent):
+    tokens = word_tokenize(sent)
+    clean1 = [x.lower() for x in tokens if x.isalpha() or x.isdigit()]
+    clean2 = [x for x in clean1 if x not in swords]
+    clean3 = [ps.stem(x) for x in clean2]
+    return clean3
+
+# Test cleaning function on sample sentence
+print(clean_text(sent))
+
+# Apply text cleaning to all messages in the dataset
+x = x.apply(lambda a: clean_text(a))
+
+# Convert the cleaned text into numerical features using TF-IDF Vectorizer
+tfidf = TfidfVectorizer(analyzer=clean_text)
+x_vect = tfidf.fit_transform(x)
+
+# Display the shape of the resulting TF-IDF matrix
+print(x_vect.shape)
+
+# View the features extracted
+print(pd.DataFrame(x_vect.toarray(), columns=tfidf.get_feature_names_out()))
+
+# Get the number of features (terms)
+print(len(tfidf.get_feature_names_out()))
+
+# Split the dataset into training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(x_vect, y, random_state=0, stratify=y)
+
+# Check the shape of training and testing data
+print(x_train.shape)
+print(x_test.shape)
+
+# Train a Random Forest Classifier
+clf = RandomForestClassifier(random_state=0)
+clf.fit(x_train, y_train)
+
+# Predict the labels for the test set
+y_pred = clf.predict(x_test)
+
+# Evaluate the model's performance
+print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+print(classification_report(y_test, y_pred))
+
+# Prediction on a new dataset (sample.csv)
+# Download the sample.csv file for prediction from the given link
+
+new = pd.read_csv('sample.csv', sep='\t', names=['text'])
+
+# Transform the new data using the same TF-IDF vectorizer
+new = tfidf.transform(new['text'])
+
+# Make predictions on the new data
+print(clf.predict(new))
